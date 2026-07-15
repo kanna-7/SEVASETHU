@@ -42,7 +42,14 @@ const homeSchema = new mongoose.Schema(
       bankName: String,
     },
     qrCode: { type: String },
-    currentNeeds: [{ item: String, quantity: Number, priority: String }],
+    currentNeeds: [{
+      item: { type: String, required: true },
+      quantity: { type: Number, required: true },
+      priority: { type: String, enum: ['high', 'medium', 'low'], default: 'medium' },
+      status: { type: String, enum: ['pending', 'approved'], default: 'pending' },
+      createdAt: { type: Date, default: Date.now },
+    }],
+    googleMapsUrl: { type: String },
     monthlyExpenses: [{
       month: String,
       year: Number,

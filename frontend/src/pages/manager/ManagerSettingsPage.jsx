@@ -18,6 +18,7 @@ export default function ManagerSettingsPage() {
     phone: '',
     email: '',
     address: { street: '', city: '', state: '', pincode: '' },
+    googleMapsUrl: '',
     contactPerson: { name: '', phone: '', email: '', designation: '', photo: '' },
     documents: { pan: '' },
   });
@@ -40,6 +41,7 @@ export default function ManagerSettingsPage() {
               description: home.description || '',
               phone: home.phone || '',
               email: home.email || '',
+              googleMapsUrl: home.googleMapsUrl || '',
               address: {
                 street: home.address?.street || '',
                 city: home.address?.city || '',
@@ -108,6 +110,7 @@ export default function ManagerSettingsPage() {
           description: updatedHome.description || '',
           phone: updatedHome.phone || '',
           email: updatedHome.email || '',
+          googleMapsUrl: updatedHome.googleMapsUrl || '',
           address: {
             street: updatedHome.address?.street || '',
             city: updatedHome.address?.city || '',
@@ -346,6 +349,16 @@ export default function ManagerSettingsPage() {
                     className="field"
                     value={form.address.pincode}
                     onChange={(e) => update('address', { ...form.address, pincode: e.target.value })}
+                  />
+                </div>
+                <div className="sm:col-span-2 mt-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Google Maps Location Link</label>
+                  <input
+                    type="url"
+                    placeholder="https://maps.app.goo.gl/..."
+                    className="field"
+                    value={form.googleMapsUrl || ''}
+                    onChange={(e) => update('googleMapsUrl', e.target.value)}
                   />
                 </div>
               </div>
