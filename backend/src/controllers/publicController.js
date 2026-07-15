@@ -75,7 +75,7 @@ export const getHomeBySlug = async (req, res, next) => {
 
     if (!home) throw new AppError('Home not found', 404);
 
-    const [donations, events] = await Promise.all([
+    const [donations, events, residents] = await Promise.all([
       Donation.find({ home: home._id, status: 'completed' })
         .select('donorName amount purpose createdAt isAnonymous')
         .sort({ createdAt: -1 })
@@ -83,11 +83,14 @@ export const getHomeBySlug = async (req, res, next) => {
       Event.find({ home: home._id, isPublic: true })
         .sort({ date: -1 })
         .limit(10),
+      Resident.find({ home: home._id, isActive: { $ne: false } })
+        .select('name photo gender age bloodGroup disability')
+        .sort({ createdAt: -1 }),
     ]);
 
     res.json({
       success: true,
-      data: { home, recentDonations: donations, events },
+      data: { home, recentDonations: donations, events, residents },
     });
   } catch (error) {
     next(error);

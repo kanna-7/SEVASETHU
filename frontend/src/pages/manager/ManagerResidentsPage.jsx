@@ -148,14 +148,21 @@ export default function ManagerResidentsPage() {
                 <tr key={r._id} className="border-b last:border-0 hover:bg-gray-50/50">
                   <td className="py-3 text-gray-500 font-mono">{r.residentId}</td>
                   <td className="py-3 font-medium flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-200 flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0 border border-gray-200 flex items-center justify-center">
                       {r.photo ? (
-                        <img src={r.photo} alt={r.name} className="w-full h-full object-cover" />
+                        <img 
+                          src={r.photo} 
+                          alt={r.name} 
+                          onError={(e) => {
+                            e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&auto=format&fit=crop';
+                          }}
+                          className="w-full h-full object-cover" 
+                        />
                       ) : (
-                        <User className="w-4 h-4 text-gray-400" />
+                        <User className="w-8 h-8 text-gray-400" />
                       )}
                     </div>
-                    {r.name}
+                    <span>{r.name}</span>
                   </td>
                   <td className="py-3 capitalize">{r.gender}</td>
                   <td className="py-3">{r.age}</td>
