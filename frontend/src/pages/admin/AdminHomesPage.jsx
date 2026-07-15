@@ -191,7 +191,7 @@ export default function AdminHomesPage() {
               <div key={home._id} className="card hover:shadow-sm transition-shadow">
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* Image Column */}
-                  <div className="w-full md:w-48 h-32 rounded-lg overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center border border-gray-100">
+                  <Link to={`/homes/${home.slug}`} className="w-full md:w-48 h-32 rounded-lg overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center border border-gray-100 hover:opacity-90 transition-opacity">
                     {homeImage ? (
                       <img src={homeImage} alt={home.name} className="w-full h-full object-cover" />
                     ) : (
@@ -200,7 +200,7 @@ export default function AdminHomesPage() {
                         <span className="text-xs">No image</span>
                       </div>
                     )}
-                  </div>
+                  </Link>
 
                   {/* Details Column */}
                   <div className="flex-1 flex flex-col justify-between">

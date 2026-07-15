@@ -18,7 +18,7 @@ export default function ManagerSettingsPage() {
     phone: '',
     email: '',
     address: { street: '', city: '', state: '', pincode: '' },
-    contactPerson: { name: '', phone: '', email: '', designation: '' },
+    contactPerson: { name: '', phone: '', email: '', designation: '', photo: '' },
     documents: { pan: '' },
   });
 
@@ -51,6 +51,7 @@ export default function ManagerSettingsPage() {
                 phone: home.contactPerson?.phone || '',
                 email: home.contactPerson?.email || '',
                 designation: home.contactPerson?.designation || '',
+                photo: home.contactPerson?.photo || '',
               },
               documents: {
                 pan: home.documents?.pan || '',
@@ -98,6 +99,34 @@ export default function ManagerSettingsPage() {
       const res = await updateMyHome(data);
       const updatedHome = res.data.data;
       setSuccessMsg('Settings updated successfully!');
+      
+      // Update form state with the newly returned home details
+      if (updatedHome) {
+        setForm({
+          name: updatedHome.name || '',
+          type: updatedHome.type || 'orphanage',
+          description: updatedHome.description || '',
+          phone: updatedHome.phone || '',
+          email: updatedHome.email || '',
+          address: {
+            street: updatedHome.address?.street || '',
+            city: updatedHome.address?.city || '',
+            state: updatedHome.address?.state || '',
+            pincode: updatedHome.address?.pincode || '',
+          },
+          contactPerson: {
+            name: updatedHome.contactPerson?.name || '',
+            phone: updatedHome.contactPerson?.phone || '',
+            email: updatedHome.contactPerson?.email || '',
+            designation: updatedHome.contactPerson?.designation || '',
+            photo: updatedHome.contactPerson?.photo || '',
+          },
+          documents: {
+            pan: updatedHome.documents?.pan || '',
+          },
+        });
+      }
+      
       if (updatedHome.contactPerson?.photo) {
         setGuardianPhotoPreview(updatedHome.contactPerson.photo);
       }
