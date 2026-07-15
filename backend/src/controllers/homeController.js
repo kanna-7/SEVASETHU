@@ -10,18 +10,7 @@ import { AppError } from '../middleware/errorHandler.js';
 
 export const registerHome = async (req, res, next) => {
   try {
-    const { googleVerificationToken, ...homeData } = req.body;
-    if (!googleVerificationToken) throw new AppError('Please sign in with Google before submitting your request', 401);
-    let profile;
-    try {
-      profile = jwt.verify(googleVerificationToken, process.env.JWT_SECRET);
-    } catch {
-      throw new AppError('Your Google verification expired. Please sign in again.', 401);
-    }
-
-    if (profile?.purpose !== 'guardian_application' || !profile.email || profile.email.toLowerCase() !== homeData.email?.toLowerCase()) {
-      throw new AppError('Use the same verified Google email for this request', 401);
-    }
+    const homeData = req.body;
     for (const key of ['address', 'contactPerson', 'documents']) {
       if (typeof homeData[key] === 'string') homeData[key] = JSON.parse(homeData[key]);
     }
@@ -29,11 +18,9 @@ export const registerHome = async (req, res, next) => {
       throw new AppError('Please upload at least one home image and one guardian photo', 400);
     }
 
-    homeData.email = profile.email;
     homeData.contactPerson = {
       ...homeData.contactPerson,
-      name: homeData.contactPerson?.name || profile.name,
-      email: profile.email,
+      email: homeData.contactPerson?.email || homeData.email,
     };
     homeData.status = 'pending';
     homeData.isVerified = false;
