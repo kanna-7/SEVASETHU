@@ -125,41 +125,92 @@ export default function HomeDetailPage() {
             </div>
           )}
 
-          {activeTab === 'Residents' && (
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg mb-4 text-gray-900">Residents List</h3>
-              {residents.length > 0 ? (
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {residents.map((r, i) => (
-                    <div key={i} className="card flex items-center gap-4 hover:shadow-md transition-shadow">
-                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0 border border-gray-200 flex items-center justify-center">
-                        {r.photo ? (
-                          <img
-                            src={r.photo}
-                            alt={r.name}
-                            onError={(e) => {
-                              e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&auto=format&fit=crop';
-                            }}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <User className="w-8 h-8 text-gray-400" />
-                        )}
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900">{r.name}</h4>
-                        <p className="text-sm text-gray-500 capitalize">{r.gender} · {r.age} yrs</p>
-                        {r.bloodGroup && <span className="text-xs font-semibold bg-red-50 text-red-700 px-2 py-0.5 rounded-full mt-1 inline-block">{r.bloodGroup} Blood Group</span>}
-                        {r.disability && <p className="text-xs text-amber-700 mt-0.5">Disability: {r.disability}</p>}
-                      </div>
+          {activeTab === 'Residents' && (() => {
+            const activeResidents = residents.filter((r) => r.status !== 'expired');
+            const expiredResidents = residents.filter((r) => r.status === 'expired');
+            return (
+              <div className="space-y-8">
+                <div>
+                  <h3 className="font-semibold text-lg mb-4 text-gray-900 flex items-center gap-2">
+                    <span>Current Residents</span>
+                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-normal">
+                      {activeResidents.length} active
+                    </span>
+                  </h3>
+                  {activeResidents.length > 0 ? (
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {activeResidents.map((r, i) => (
+                        <div key={i} className="card flex items-center gap-4 hover:shadow-md transition-shadow">
+                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0 border border-gray-200 flex items-center justify-center">
+                            {r.photo ? (
+                              <img
+                                src={r.photo}
+                                alt={r.name}
+                                onError={(e) => {
+                                  e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&auto=format&fit=crop';
+                                }}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User className="w-8 h-8 text-gray-400" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{r.name}</h4>
+                            <p className="text-sm text-gray-500 capitalize">{r.gender} · {r.age} yrs</p>
+                            {r.bloodGroup && <span className="text-xs font-semibold bg-red-50 text-red-700 px-2 py-0.5 rounded-full mt-1 inline-block">{r.bloodGroup} Blood Group</span>}
+                            {r.disability && <p className="text-xs text-amber-700 mt-0.5">Disability: {r.disability}</p>}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <p className="text-gray-500 text-sm">No active residents details listed publicly.</p>
+                  )}
                 </div>
-              ) : (
-                <p className="text-gray-500">No residents details listed publicly.</p>
-              )}
-            </div>
-          )}
+
+                {expiredResidents.length > 0 && (
+                  <div className="pt-6 border-t border-gray-100">
+                    <h3 className="font-semibold text-lg mb-4 text-gray-500 flex items-center gap-2">
+                      <span>In Loving Memory</span>
+                      <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-normal">
+                        {expiredResidents.length} passed away
+                      </span>
+                    </h3>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {expiredResidents.map((r, i) => (
+                        <div key={i} className="card bg-gray-50/50 border-gray-100 flex items-center gap-4 filter grayscale opacity-75 hover:opacity-100 transition-opacity">
+                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0 border border-gray-200 flex items-center justify-center relative">
+                            {r.photo ? (
+                              <img
+                                src={r.photo}
+                                alt={r.name}
+                                onError={(e) => {
+                                  e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&auto=format&fit=crop';
+                                }}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User className="w-8 h-8 text-gray-400" />
+                            )}
+                            <div className="absolute bottom-0 inset-x-0 bg-black/60 text-[10px] text-white text-center py-0.5 font-medium">Memory</div>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-700 flex items-center gap-1.5">
+                              <span>{r.name}</span>
+                              <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.2 rounded-full font-medium">RIP</span>
+                            </h4>
+                            <p className="text-sm text-gray-500 capitalize">{r.gender} · {r.age} yrs</p>
+                            <p className="text-xs text-gray-400 mt-1 italic">Forever in our hearts</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {activeTab === 'Needs' && (
             <div className="space-y-3">

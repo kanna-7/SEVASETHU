@@ -71,6 +71,10 @@ export const createResident = (data) => {
   const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
   return api.post('/residents', data, isFormData ? {} : undefined);
 };
+export const updateResident = (id, data) => {
+  const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+  return api.put(`/residents/${id}`, data, isFormData ? {} : undefined);
+};
 
 // Inventory
 export const getInventory = (params) => api.get('/inventory', { params });

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Plus, Upload, User } from 'lucide-react';
+import { Plus, Upload, User, Edit2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { getResidents, createResident } from '../../services/api';
+import { getResidents, createResident, updateResident } from '../../services/api';
 
 const blankForm = {
   name: '',
@@ -15,6 +15,7 @@ const blankForm = {
   aadhaarAvailable: false,
   disability: '',
   emergencyContact: { name: '', phone: '' },
+  status: 'active',
 };
 
 export default function ManagerResidentsPage() {
@@ -22,6 +23,7 @@ export default function ManagerResidentsPage() {
   const [residents, setResidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingResident, setEditingResident] = useState(null);
   const [photo, setPhoto] = useState(null);
   const [form, setForm] = useState(blankForm);
 
@@ -34,7 +36,7 @@ export default function ManagerResidentsPage() {
     }
   }, [isManager]);
 
-  const handleAdd = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const data = new FormData();
@@ -52,13 +54,20 @@ export default function ManagerResidentsPage() {
         data.append('photo', photo);
       }
 
-      const res = await createResident(data);
-      setResidents([...residents, res.data.data]);
+      if (editingResident) {
+        const res = await updateResident(editingResident._id, data);
+        setResidents(residents.map((r) => r._id === editingResident._id ? res.data.data : r));
+      } else {
+        const res = await createResident(data);
+        setResidents([...residents, res.data.data]);
+      }
+      
       setShowForm(false);
+      setEditingResident(null);
       setPhoto(null);
       setForm(blankForm);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to add resident');
+      alert(err.response?.data?.message || `Failed to ${editingResident ? 'update' : 'add'} resident`);
     }
   };
 
@@ -69,13 +78,25 @@ export default function ManagerResidentsPage() {
     <DashboardLayout type="manager">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Residents</h2>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2 text-sm">
+        <button 
+          onClick={() => {
+            setEditingResident(null);
+            setForm(blankForm);
+            setPhoto(null);
+            setShowForm(!showForm);
+          }} 
+          className="btn-primary flex items-center gap-2 text-sm"
+        >
           <Plus className="w-4 h-4" /> Add Resident
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleAdd} className="card mb-6 grid sm:grid-cols-3 gap-4">
+        <form onSubmit={handleSubmit} className="card mb-6 grid sm:grid-cols-3 gap-4">
+          <div className="sm:col-span-3 pb-2 border-b border-gray-100">
+            <h3 className="font-semibold text-gray-900">{editingResident ? 'Edit Resident Details' : 'Add New Resident'}</h3>
+          </div>
+
           <input required placeholder="Name *" className="field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           
           <select className="field" value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}>
@@ -98,9 +119,19 @@ export default function ManagerResidentsPage() {
           
           <input placeholder="Emergency contact phone" className="field" value={form.emergencyContact.phone} onChange={(e) => setForm({ ...form, emergencyContact: { ...form.emergencyContact, phone: e.target.value } })} />
           
+          {editingResident && (
+            <select className="field border border-primary-300 focus:ring-primary-500" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              <option value="active">Active</option>
+              <option value="discharged">Discharged</option>
+              <option value="expired">Expired</option>
+            </select>
+          )}
+
           {/* Photo upload field */}
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Resident Photo</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {editingResident ? 'Update Photo (leave empty to keep current)' : 'Resident Photo'}
+            </label>
             <div className="relative border-2 border-dashed border-gray-300 rounded-lg px-3 py-1.5 hover:border-primary-500 transition-colors flex items-center justify-center gap-2 cursor-pointer bg-white text-sm">
               <Upload className="w-4 h-4 text-gray-400" />
               <span className="text-xs text-gray-500 truncate">
@@ -123,8 +154,21 @@ export default function ManagerResidentsPage() {
           </div>
 
           <div className="sm:col-span-3 flex justify-end gap-2">
-            <button type="button" onClick={() => { setShowForm(false); setPhoto(null); }} className="btn-secondary text-sm">Cancel</button>
-            <button type="submit" className="btn-primary text-sm">Save Resident</button>
+            <button 
+              type="button" 
+              onClick={() => { 
+                setShowForm(false); 
+                setEditingResident(null); 
+                setPhoto(null); 
+                setForm(blankForm); 
+              }} 
+              className="btn-secondary text-sm"
+            >
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary text-sm">
+              {editingResident ? 'Update Resident' : 'Save Resident'}
+            </button>
           </div>
         </form>
       )}
@@ -141,6 +185,8 @@ export default function ManagerResidentsPage() {
                 <th className="pb-3 font-medium">Gender</th>
                 <th className="pb-3 font-medium">Age</th>
                 <th className="pb-3 font-medium">Blood Group</th>
+                <th className="pb-3 font-medium">Status</th>
+                <th className="pb-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -167,6 +213,38 @@ export default function ManagerResidentsPage() {
                   <td className="py-3 capitalize">{r.gender}</td>
                   <td className="py-3">{r.age}</td>
                   <td className="py-3">{r.bloodGroup || '—'}</td>
+                  <td className="py-3">
+                    <span className={`badge badge-${r.status || 'active'}`}>
+                      {r.status || 'active'}
+                    </span>
+                  </td>
+                  <td className="py-3 text-right">
+                    <button
+                      onClick={() => {
+                        setEditingResident(r);
+                        setForm({
+                          name: r.name || '',
+                          gender: r.gender || 'male',
+                          age: r.age || '',
+                          bloodGroup: r.bloodGroup || '',
+                          mobile: r.mobile || '',
+                          dateOfBirth: r.dateOfBirth ? new Date(r.dateOfBirth).toISOString().split('T')[0] : '',
+                          aadhaarAvailable: r.aadhaarAvailable || false,
+                          disability: r.disability || '',
+                          emergencyContact: {
+                            name: r.emergencyContact?.name || '',
+                            phone: r.emergencyContact?.phone || '',
+                          },
+                          status: r.status || 'active',
+                        });
+                        setPhoto(null);
+                        setShowForm(true);
+                      }}
+                      className="text-primary-600 hover:text-primary-900 font-medium inline-flex items-center gap-1"
+                    >
+                      <Edit2 className="w-4 h-4" /> Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
