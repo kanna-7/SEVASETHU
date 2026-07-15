@@ -1,95 +1,37 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, CheckCircle, Chrome, Upload } from 'lucide-react';
-import { registerHome, verifyGoogleIdentity } from '../services/api';
-
-const blankForm = {
-  name: '',
-  type: 'orphanage',
-  description: '',
-  phone: '',
-  email: '',
-  address: { street: '', city: '', state: '', pincode: '' },
-  contactPerson: { name: '', phone: '', email: '', designation: 'Manager' },
-  documents: { pan: '' },
-};
+import { Building2, CheckCircle, Upload } from 'lucide-react';
+import { registerHome } from '../services/api';
 
 export default function RegisterHomePage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [verificationToken, setVerificationToken] = useState('');
-  const [googleStatus, setGoogleStatus] = useState('');
   const [homeImages, setHomeImages] = useState([]);
   const [guardianPhoto, setGuardianPhoto] = useState(null);
-  const [form, setForm] = useState(blankForm);
-  const googleButton = useRef(null);
-  const verified = Boolean(verificationToken);
+  
+  const [form, setForm] = useState({
+    name: '',
+    type: 'orphanage',
+    description: '',
+    phone: '',
+    email: '',
+    address: { street: '', city: '', state: '', pincode: '' },
+    contactPerson: { name: '', phone: '', email: '', designation: '' },
+    documents: { pan: '' },
+  });
 
   const update = (key, value) => {
     setForm((current) => ({ ...current, [key]: value }));
   };
 
-  useEffect(() => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      setGoogleStatus('Google sign-in has not been configured.');
-      return undefined;
-    }
-    const initialize = () => {
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: async ({ credential }) => {
-          try {
-            setGoogleStatus('Verifying your Google account...');
-            const response = await verifyGoogleIdentity(credential);
-            const { name, email, verificationToken: token } = response.data.data;
-            setVerificationToken(token);
-            setForm((current) => ({
-              ...current,
-              email,
-              contactPerson: { ...current.contactPerson, name: name || current.contactPerson.name, email },
-            }));
-            setGoogleStatus(`Signed in as ${email}`);
-          } catch (error) {
-            setGoogleStatus(error.response?.data?.message || 'Google sign-in could not be verified.');
-          }
-        },
-      });
-      window.google.accounts.id.renderButton(googleButton.current, {
-        theme: 'outline',
-        size: 'large',
-        text: 'continue_with',
-        width: 280,
-      });
-    };
-    const script = document.getElementById('google-identity-script');
-    if (script) {
-      if (window.google) initialize();
-      else script.addEventListener('load', initialize);
-      return () => script.removeEventListener('load', initialize);
-    }
-    const newScript = document.createElement('script');
-    newScript.id = 'google-identity-script';
-    newScript.src = 'https://accounts.google.com/gsi/client';
-    newScript.async = true;
-    newScript.onload = initialize;
-    document.head.appendChild(newScript);
-    return undefined;
-  }, []);
-
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!verificationToken) {
-      alert('Please sign in with Google before submitting your request.');
-      return;
-    }
     if (!homeImages.length || !guardianPhoto) {
       alert('Please upload at least one home image and your guardian/manager photo before submitting.');
       return;
     }
     setLoading(true);
     const data = new FormData();
-    data.append('googleVerificationToken', verificationToken);
     
     // Append form data
     Object.entries(form).forEach(([key, value]) => {
@@ -131,28 +73,8 @@ export default function RegisterHomePage() {
         <Building2 className="w-12 h-12 text-primary-600 mx-auto mb-3" />
         <h1 className="text-3xl font-bold">Register Your Home</h1>
         <p className="text-gray-500 mt-2">
-          Verify your identity via Google, then complete the details below to submit your home for review.
+          Complete the details below to submit your home for review.
         </p>
-      </div>
-
-      <div className="card mb-6 bg-blue-50 border-blue-100">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex gap-3 items-start">
-            <Chrome className="w-6 h-6 text-blue-700 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-semibold text-sm text-blue-900">Verify your Google account *</p>
-              <p className="text-xs text-gray-600">
-                A verified Google account is required to apply. This helps secure the registration process.
-              </p>
-              {googleStatus && (
-                <p className={`text-xs font-medium mt-2 ${verified ? 'text-green-700' : 'text-blue-700'}`}>
-                  {googleStatus}
-                </p>
-              )}
-            </div>
-          </div>
-          <div ref={googleButton} className="shrink-0" />
-        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="card space-y-6">
@@ -168,19 +90,25 @@ export default function RegisterHomePage() {
                 placeholder="Full name"
                 className="field"
                 value={form.contactPerson.name}
-                readOnly={verified}
                 onChange={(e) => update('contactPerson', { ...form.contactPerson, name: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Verified Email *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
               <input
                 required
                 type="email"
-                placeholder="Google account email"
-                className="field bg-gray-50 text-gray-500 cursor-not-allowed"
+                placeholder="Guardian email address"
+                className="field"
                 value={form.email}
-                readOnly
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setForm((current) => ({
+                    ...current,
+                    email: val,
+                    contactPerson: { ...current.contactPerson, email: val }
+                  }));
+                }}
               />
             </div>
             <div>
@@ -353,7 +281,7 @@ export default function RegisterHomePage() {
 
         <button
           type="submit"
-          disabled={loading || !verified}
+          disabled={loading}
           className="btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {loading ? 'Submitting Registration...' : 'Submit Registration'}
