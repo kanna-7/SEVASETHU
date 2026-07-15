@@ -22,6 +22,12 @@ export const registerHome = async (req, res, next) => {
     if (profile?.purpose !== 'guardian_application' || !profile.email || profile.email.toLowerCase() !== homeData.email?.toLowerCase()) {
       throw new AppError('Use the same verified Google email for this request', 401);
     }
+    for (const key of ['address', 'contactPerson', 'documents']) {
+      if (typeof homeData[key] === 'string') homeData[key] = JSON.parse(homeData[key]);
+    }
+    if (!req.files?.homeImages?.length || !req.files?.guardianPhoto?.length) {
+      throw new AppError('Please upload at least one home image and one guardian photo', 400);
+    }
 
     homeData.email = profile.email;
     homeData.contactPerson = {
@@ -31,6 +37,9 @@ export const registerHome = async (req, res, next) => {
     };
     homeData.status = 'pending';
     homeData.isVerified = false;
+    const urls = req.files.homeImages.map((file) => `/api/uploads/${file.filename}`);
+    homeData.images = { building: urls.slice(0, 3), gallery: urls };
+    homeData.contactPerson.photo = `/api/uploads/${req.files.guardianPhoto[0].filename}`;
 
     const home = await Home.create(homeData);
 
@@ -86,7 +95,64 @@ export const updateHome = async (req, res, next) => {
     const home = await Home.findOne({ _id: req.user.home });
     if (!home) throw new AppError('Home not found', 404);
 
-    Object.assign(home, req.body);
+    const homeData = { ...req.body };
+
+    // Parse stringified JSON fields
+    for (const key of ['address', 'contactPerson', 'documents']) {
+      if (typeof homeData[key] === 'string') {
+        try {
+          homeData[key] = JSON.parse(homeData[key]);
+        } catch (err) {
+          console.error(`Failed to parse ${key} field:`, err);
+        }
+      }
+    }
+
+    // Merge nested objects to avoid overwriting existing properties
+    if (homeData.contactPerson) {
+      home.contactPerson = {
+        ...home.contactPerson?.toObject(),
+        ...homeData.contactPerson,
+      };
+    }
+    
+    // Handle file uploads
+    if (req.files?.guardianPhoto?.length) {
+      home.contactPerson = {
+        ...home.contactPerson?.toObject(),
+        photo: `/api/uploads/${req.files.guardianPhoto[0].filename}`,
+      };
+    }
+
+    if (homeData.address) {
+      home.address = {
+        ...home.address?.toObject(),
+        ...homeData.address,
+      };
+    }
+    if (homeData.documents) {
+      home.documents = {
+        ...home.documents?.toObject(),
+        ...homeData.documents,
+      };
+    }
+
+    if (req.files?.homeImages?.length) {
+      const urls = req.files.homeImages.map((file) => `/api/uploads/${file.filename}`);
+      home.images = {
+        ...home.images?.toObject(),
+        building: urls.slice(0, 3),
+        gallery: [...(home.images?.gallery || []), ...urls],
+      };
+    }
+
+    // Clean up nested fields so Object.assign does not overwrite
+    delete homeData.contactPerson;
+    delete homeData.address;
+    delete homeData.documents;
+    delete homeData.images;
+
+    Object.assign(home, homeData);
     await home.save();
 
     res.json({ success: true, data: home });

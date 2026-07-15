@@ -62,6 +62,17 @@ export const getPendingHomes = async (req, res, next) => {
   }
 };
 
+export const getApprovedHomes = async (req, res, next) => {
+  try {
+    const homes = await Home.find({ status: 'approved' })
+      .populate('manager', 'name email phone')
+      .sort({ createdAt: -1 });
+    res.json({ success: true, data: homes });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const approveHome = async (req, res, next) => {
   try {
     const home = await Home.findById(req.params.id);
@@ -96,6 +107,7 @@ export const approveHome = async (req, res, next) => {
       }
 
       home.manager = manager._id;
+      home.temporaryPassword = temporaryPassword;
       await home.save();
 
       await Notification.create({

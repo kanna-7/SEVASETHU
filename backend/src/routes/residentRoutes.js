@@ -11,8 +11,10 @@ import {
 import { protect } from '../middleware/auth.js';
 import { authorize } from '../middleware/rbac.js';
 import { ROLES } from '../config/roles.js';
+import { makeMulter } from '../config/upload.js';
 
 const router = Router();
+const upload = makeMulter();
 
 router.use(protect, authorize(
   ROLES.SUPER_ADMIN,
@@ -23,8 +25,8 @@ router.use(protect, authorize(
 
 router.get('/', getResidents);
 router.get('/:id', getResident);
-router.post('/', authorize(ROLES.HOME_MANAGER, ROLES.ADMIN, ROLES.SUPER_ADMIN), createResident);
-router.put('/:id', authorize(ROLES.HOME_MANAGER, ROLES.ADMIN, ROLES.SUPER_ADMIN), updateResident);
+router.post('/', authorize(ROLES.HOME_MANAGER, ROLES.ADMIN, ROLES.SUPER_ADMIN), upload.single('photo'), createResident);
+router.put('/:id', authorize(ROLES.HOME_MANAGER, ROLES.ADMIN, ROLES.SUPER_ADMIN), upload.single('photo'), updateResident);
 router.delete('/:id', authorize(ROLES.HOME_MANAGER, ROLES.ADMIN, ROLES.SUPER_ADMIN), removeResident);
 router.post('/:id/daily-records', authorize(ROLES.HOME_MANAGER), addDailyRecord);
 router.put('/:id/schemes', authorize(ROLES.HOME_MANAGER, ROLES.ADMIN), updateSchemeStatus);

@@ -67,6 +67,7 @@ const homeSchema = new mongoose.Schema(
       phone: String,
       email: String,
       designation: String,
+      photo: String,
     },
     reviews: [{
       donorName: String,
@@ -75,6 +76,7 @@ const homeSchema = new mongoose.Schema(
       createdAt: { type: Date, default: Date.now },
     }],
     averageRating: { type: Number, default: 0 },
+    temporaryPassword: { type: String },
   },
   { timestamps: true }
 );

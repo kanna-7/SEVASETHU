@@ -55,14 +55,22 @@ export const registerVolunteer = (data) => api.post('/volunteers/register', data
 // Admin
 export const getAdminDashboard = () => api.get('/admin/dashboard');
 export const getPendingHomes = () => api.get('/admin/homes/pending');
+export const getApprovedHomes = () => api.get('/admin/homes/approved');
 export const approveHome = (id, data) => api.put(`/admin/homes/${id}/approve`, data);
 
 // Manager
 export const getManagerDashboard = () => api.get('/homes/dashboard');
+export const updateMyHome = (data) => {
+  const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+  return api.put('/homes/my-home', data, isFormData ? {} : undefined);
+};
 
 // Residents
 export const getResidents = (params) => api.get('/residents', { params });
-export const createResident = (data) => api.post('/residents', data);
+export const createResident = (data) => {
+  const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+  return api.post('/residents', data, isFormData ? {} : undefined);
+};
 
 // Inventory
 export const getInventory = (params) => api.get('/inventory', { params });
