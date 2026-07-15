@@ -16,6 +16,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminHomesPage from './pages/admin/AdminHomesPage';
 import ManagerDashboard from './pages/manager/ManagerDashboard';
 import ManagerResidentsPage from './pages/manager/ManagerResidentsPage';
+import ManagerSettingsPage from './pages/manager/ManagerSettingsPage';
 
 function PublicLayout({ children }) {
   return (
@@ -45,6 +46,7 @@ export default function App() {
 
       <Route path="/manager" element={<ManagerDashboard />} />
       <Route path="/manager/residents" element={<ManagerResidentsPage />} />
+      <Route path="/manager/settings" element={<ManagerSettingsPage />} />
     </Routes>
   );
 }

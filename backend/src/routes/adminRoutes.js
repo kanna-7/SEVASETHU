@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getAdminDashboard,
   getPendingHomes,
+  getApprovedHomes,
   approveHome,
   verifyDonation,
   approveMedicalCamp,
@@ -16,6 +17,7 @@ router.use(protect, isAdmin);
 
 router.get('/dashboard', getAdminDashboard);
 router.get('/homes/pending', getPendingHomes);
+router.get('/homes/approved', getApprovedHomes);
 router.put('/homes/:id/approve', approveHome);
 router.put('/donations/:id/verify', verifyDonation);
 router.put('/medical-camps/:id/approve', approveMedicalCamp);

@@ -1,16 +1,29 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, Upload, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { getResidents, createResident } from '../../services/api';
+
+const blankForm = {
+  name: '',
+  gender: 'male',
+  age: '',
+  bloodGroup: '',
+  mobile: '',
+  dateOfBirth: '',
+  aadhaarAvailable: false,
+  disability: '',
+  emergencyContact: { name: '', phone: '' },
+};
 
 export default function ManagerResidentsPage() {
   const { isManager, loading: authLoading } = useAuth();
   const [residents, setResidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', gender: 'male', age: '', bloodGroup: '', mobile: '', dateOfBirth: '', aadhaarAvailable: false, disability: '', emergencyContact: { name: '', phone: '' } });
+  const [photo, setPhoto] = useState(null);
+  const [form, setForm] = useState(blankForm);
 
   useEffect(() => {
     if (isManager) {
@@ -24,10 +37,26 @@ export default function ManagerResidentsPage() {
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
-      const res = await createResident({ ...form, age: Number(form.age) });
+      const data = new FormData();
+      
+      // Append form fields
+      Object.entries(form).forEach(([key, value]) => {
+        data.append(key, typeof value === 'object' ? JSON.stringify(value) : value);
+      });
+      
+      // Override age to number
+      data.set('age', Number(form.age));
+
+      // Append photo if selected
+      if (photo) {
+        data.append('photo', photo);
+      }
+
+      const res = await createResident(data);
       setResidents([...residents, res.data.data]);
       setShowForm(false);
-      setForm({ name: '', gender: 'male', age: '', bloodGroup: '', mobile: '', dateOfBirth: '', aadhaarAvailable: false, disability: '', emergencyContact: { name: '', phone: '' } });
+      setPhoto(null);
+      setForm(blankForm);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to add resident');
     }
@@ -47,21 +76,56 @@ export default function ManagerResidentsPage() {
 
       {showForm && (
         <form onSubmit={handleAdd} className="card mb-6 grid sm:grid-cols-3 gap-4">
-          <input required placeholder="Name" className="border border-gray-300 rounded-lg px-3 py-2 text-sm" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <select className="border border-gray-300 rounded-lg px-3 py-2 text-sm" value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}>
+          <input required placeholder="Name *" className="field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          
+          <select className="field" value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}>
             <option value="male">Male</option>
             <option value="female">Female</option>
             <option value="other">Other</option>
           </select>
-          <input required type="number" placeholder="Age" className="border border-gray-300 rounded-lg px-3 py-2 text-sm" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} />
+          
+          <input required type="number" placeholder="Age *" className="field" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} />
+          
           <input type="date" aria-label="Date of birth" className="field" value={form.dateOfBirth} onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })} />
+          
           <input placeholder="Blood group" className="field" value={form.bloodGroup} onChange={(e) => setForm({ ...form, bloodGroup: e.target.value })} />
+          
           <input placeholder="Mobile number" className="field" value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} />
+          
           <input placeholder="Disability / support needs" className="field" value={form.disability} onChange={(e) => setForm({ ...form, disability: e.target.value })} />
+          
           <input placeholder="Emergency contact name" className="field" value={form.emergencyContact.name} onChange={(e) => setForm({ ...form, emergencyContact: { ...form.emergencyContact, name: e.target.value } })} />
+          
           <input placeholder="Emergency contact phone" className="field" value={form.emergencyContact.phone} onChange={(e) => setForm({ ...form, emergencyContact: { ...form.emergencyContact, phone: e.target.value } })} />
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.aadhaarAvailable} onChange={(e) => setForm({ ...form, aadhaarAvailable: e.target.checked })} /> Aadhaar available</label>
-          <button type="submit" className="btn-primary text-sm">Save</button>
+          
+          {/* Photo upload field */}
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Resident Photo</label>
+            <div className="relative border-2 border-dashed border-gray-300 rounded-lg px-3 py-1.5 hover:border-primary-500 transition-colors flex items-center justify-center gap-2 cursor-pointer bg-white text-sm">
+              <Upload className="w-4 h-4 text-gray-400" />
+              <span className="text-xs text-gray-500 truncate">
+                {photo ? photo.name : 'Choose resident photo...'}
+              </span>
+              <input
+                accept="image/*"
+                type="file"
+                className="absolute inset-0 opacity-0 cursor-pointer"
+                onChange={(e) => setPhoto(e.target.files?.[0] || null)}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-sm sm:col-span-3 py-1">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={form.aadhaarAvailable} onChange={(e) => setForm({ ...form, aadhaarAvailable: e.target.checked })} /> 
+              Aadhaar available
+            </label>
+          </div>
+
+          <div className="sm:col-span-3 flex justify-end gap-2">
+            <button type="button" onClick={() => { setShowForm(false); setPhoto(null); }} className="btn-secondary text-sm">Cancel</button>
+            <button type="submit" className="btn-primary text-sm">Save Resident</button>
+          </div>
         </form>
       )}
 
@@ -81,9 +145,18 @@ export default function ManagerResidentsPage() {
             </thead>
             <tbody>
               {residents.map((r) => (
-                <tr key={r._id} className="border-b last:border-0">
-                  <td className="py-3 text-gray-500">{r.residentId}</td>
-                  <td className="py-3 font-medium">{r.name}</td>
+                <tr key={r._id} className="border-b last:border-0 hover:bg-gray-50/50">
+                  <td className="py-3 text-gray-500 font-mono">{r.residentId}</td>
+                  <td className="py-3 font-medium flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-200 flex items-center justify-center">
+                      {r.photo ? (
+                        <img src={r.photo} alt={r.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-4 h-4 text-gray-400" />
+                      )}
+                    </div>
+                    {r.name}
+                  </td>
                   <td className="py-3 capitalize">{r.gender}</td>
                   <td className="py-3">{r.age}</td>
                   <td className="py-3">{r.bloodGroup || '—'}</td>

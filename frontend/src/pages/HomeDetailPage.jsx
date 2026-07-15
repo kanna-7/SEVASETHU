@@ -149,6 +149,38 @@ export default function HomeDetailPage() {
         </div>
 
         <div className="space-y-6">
+          {home.contactPerson && (
+            <div className="card text-center">
+              <h3 className="font-semibold text-lg mb-4 text-left border-b border-gray-100 pb-2">Home Guardian</h3>
+              <div className="flex flex-col items-center">
+                <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-50 border border-gray-200 mb-3 shrink-0 flex items-center justify-center">
+                  {home.contactPerson.photo ? (
+                    <img src={home.contactPerson.photo} alt={home.contactPerson.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-gray-400 font-bold text-2xl uppercase">
+                      {home.contactPerson.name?.charAt(0) || 'G'}
+                    </div>
+                  )}
+                </div>
+                <h4 className="font-semibold text-gray-900 text-sm">{home.contactPerson.name}</h4>
+                <p className="text-xs text-gray-500 capitalize">{home.contactPerson.designation || 'Guardian / Manager'}</p>
+                
+                <div className="w-full border-t border-gray-100 mt-4 pt-3 text-left space-y-2 text-xs text-gray-600">
+                  {home.contactPerson.phone && (
+                    <p className="flex items-center gap-2">
+                      <Phone className="w-3.5 h-3.5 text-gray-400" /> {home.contactPerson.phone}
+                    </p>
+                  )}
+                  {home.contactPerson.email && (
+                    <p className="flex items-center gap-2">
+                      <Mail className="w-3.5 h-3.5 text-gray-400" /> {home.contactPerson.email}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="card">
             <h3 className="font-semibold text-lg mb-4">Donate to this Home</h3>
             {home.qrCode && (

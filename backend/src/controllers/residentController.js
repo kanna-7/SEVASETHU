@@ -43,7 +43,23 @@ export const createResident = async (req, res, next) => {
     const homeId = req.user.home || req.body.home;
     if (!homeId) throw new AppError('Home ID required', 400);
 
-    const resident = await Resident.create({ ...req.body, home: homeId });
+    const residentData = { ...req.body };
+    const objectsToParse = ['guardian', 'emergencyContact', 'health', 'governmentSchemes', 'financial', 'education'];
+    for (const key of objectsToParse) {
+      if (typeof residentData[key] === 'string') {
+        try {
+          residentData[key] = JSON.parse(residentData[key]);
+        } catch (err) {
+          console.error(`Failed to parse ${key} field:`, err);
+        }
+      }
+    }
+
+    if (req.file) {
+      residentData.photo = `/api/uploads/${req.file.filename}`;
+    }
+
+    const resident = await Resident.create({ ...residentData, home: homeId });
 
     await Home.findByIdAndUpdate(homeId, { $inc: { residentCount: 1 } });
 
@@ -72,7 +88,23 @@ export const updateResident = async (req, res, next) => {
       throw new AppError('Access denied', 403);
     }
 
-    Object.assign(resident, req.body);
+    const residentData = { ...req.body };
+    const objectsToParse = ['guardian', 'emergencyContact', 'health', 'governmentSchemes', 'financial', 'education'];
+    for (const key of objectsToParse) {
+      if (typeof residentData[key] === 'string') {
+        try {
+          residentData[key] = JSON.parse(residentData[key]);
+        } catch (err) {
+          console.error(`Failed to parse ${key} field:`, err);
+        }
+      }
+    }
+
+    if (req.file) {
+      residentData.photo = `/api/uploads/${req.file.filename}`;
+    }
+
+    Object.assign(resident, residentData);
     await resident.save();
 
     res.json({ success: true, data: resident });
