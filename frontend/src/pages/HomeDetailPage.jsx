@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Users, BadgeCheck, QrCode, Heart } from 'lucide-react';
+import { MapPin, Phone, Mail, Users, BadgeCheck, QrCode, Heart, User } from 'lucide-react';
 import { getHome } from '../services/api';
 
-const tabs = ['About', 'Gallery', 'Needs', 'Donations', 'Events', 'Reviews'];
+const tabs = ['About', 'Residents', 'Gallery', 'Needs', 'Donations', 'Events', 'Reviews'];
 
 export default function HomeDetailPage() {
   const { slug } = useParams();
@@ -21,7 +21,7 @@ export default function HomeDetailPage() {
   if (loading) return <div className="max-w-7xl mx-auto px-4 py-20 text-center text-gray-500">Loading...</div>;
   if (!data) return <div className="max-w-7xl mx-auto px-4 py-20 text-center text-gray-500">Home not found</div>;
 
-  const { home, recentDonations, events } = data;
+  const { home, recentDonations, events, residents = [] } = data;
   const gallery = [
     ...(home.images?.building || []),
     ...(home.images?.kitchen || []),
@@ -35,9 +35,20 @@ export default function HomeDetailPage() {
         <div className="lg:col-span-2">
           <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden mb-6">
             {gallery[0] ? (
-              <img src={gallery[0]} alt={home.name} className="w-full h-full object-cover" />
+              <img 
+                src={gallery[0]} 
+                alt={home.name} 
+                onError={(e) => {
+                  e.target.src = 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?q=80&w=600&auto=format&fit=crop';
+                }}
+                className="w-full h-full object-cover" 
+              />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">No image available</div>
+              <img 
+                src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?q=80&w=600&auto=format&fit=crop" 
+                alt="Default Home" 
+                className="w-full h-full object-cover" 
+              />
             )}
           </div>
 
@@ -58,7 +69,13 @@ export default function HomeDetailPage() {
 
           <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-6">
             <span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{home.address?.city}, {home.address?.state}</span>
-            <span className="flex items-center gap-1"><Users className="w-4 h-4" />{home.residentCount} residents</span>
+             <button 
+              onClick={() => setActiveTab('Residents')} 
+              className="flex items-center gap-1 hover:text-primary-600 transition-colors"
+            >
+              <Users className="w-4 h-4" />
+              {home.residentCount} residents
+            </button>
             <span className="flex items-center gap-1"><Phone className="w-4 h-4" />{home.phone}</span>
             <span className="flex items-center gap-1"><Mail className="w-4 h-4" />{home.email}</span>
           </div>
@@ -95,8 +112,52 @@ export default function HomeDetailPage() {
           {activeTab === 'Gallery' && (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {gallery.length > 0 ? gallery.map((img, i) => (
-                <img key={i} src={img} alt="" className="aspect-square object-cover rounded-lg" />
+                <img 
+                  key={i} 
+                  src={img} 
+                  alt="" 
+                  onError={(e) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?q=80&w=600&auto=format&fit=crop';
+                  }}
+                  className="aspect-square object-cover rounded-lg" 
+                />
               )) : <p className="text-gray-500 col-span-3">No images uploaded yet.</p>}
+            </div>
+          )}
+
+          {activeTab === 'Residents' && (
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg mb-4 text-gray-900">Residents List</h3>
+              {residents.length > 0 ? (
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {residents.map((r, i) => (
+                    <div key={i} className="card flex items-center gap-4 hover:shadow-md transition-shadow">
+                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0 border border-gray-200 flex items-center justify-center">
+                        {r.photo ? (
+                          <img
+                            src={r.photo}
+                            alt={r.name}
+                            onError={(e) => {
+                              e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&auto=format&fit=crop';
+                            }}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="w-8 h-8 text-gray-400" />
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{r.name}</h4>
+                        <p className="text-sm text-gray-500 capitalize">{r.gender} · {r.age} yrs</p>
+                        {r.bloodGroup && <span className="text-xs font-semibold bg-red-50 text-red-700 px-2 py-0.5 rounded-full mt-1 inline-block">{r.bloodGroup} Blood Group</span>}
+                        {r.disability && <p className="text-xs text-amber-700 mt-0.5">Disability: {r.disability}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">No residents details listed publicly.</p>
+              )}
             </div>
           )}
 
@@ -159,7 +220,14 @@ export default function HomeDetailPage() {
               <div className="flex flex-col items-center">
                 <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-50 border border-gray-200 mb-3 shrink-0 flex items-center justify-center">
                   {home.contactPerson.photo ? (
-                    <img src={home.contactPerson.photo} alt={home.contactPerson.name} className="w-full h-full object-cover" />
+                    <img 
+                      src={home.contactPerson.photo} 
+                      alt={home.contactPerson.name} 
+                      onError={(e) => {
+                        e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&auto=format&fit=crop';
+                      }}
+                      className="w-full h-full object-cover" 
+                    />
                   ) : (
                     <div className="text-gray-400 font-bold text-2xl uppercase">
                       {home.contactPerson.name?.charAt(0) || 'G'}

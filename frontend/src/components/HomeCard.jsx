@@ -18,13 +18,26 @@ const conditionLabels = {
 export default function HomeCard({ home }) {
   const image = home.images?.gallery?.[0] || home.images?.building?.[0];
 
+  const handleImageError = (e) => {
+    e.target.src = 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?q=80&w=600&auto=format&fit=crop';
+  };
+
   return (
     <Link to={`/homes/${home.slug}`} className="card hover:shadow-md transition-shadow group">
       <div className="aspect-video bg-gray-100 rounded-lg mb-4 overflow-hidden">
         {image ? (
-          <img src={image} alt={home.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+          <img 
+            src={image} 
+            alt={home.name} 
+            onError={handleImageError}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">No image</div>
+          <img 
+            src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?q=80&w=600&auto=format&fit=crop" 
+            alt="Default Home" 
+            className="w-full h-full object-cover" 
+          />
         )}
       </div>
 
