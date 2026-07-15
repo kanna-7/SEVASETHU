@@ -83,8 +83,8 @@ export const getHomeBySlug = async (req, res, next) => {
       Event.find({ home: home._id, isPublic: true })
         .sort({ date: -1 })
         .limit(10),
-      Resident.find({ home: home._id, isActive: { $ne: false } })
-        .select('name photo gender age bloodGroup disability')
+      Resident.find({ home: home._id, $or: [{ isActive: true }, { status: 'expired' }] })
+        .select('name photo gender age bloodGroup disability status')
         .sort({ createdAt: -1 }),
     ]);
 

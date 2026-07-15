@@ -6,11 +6,14 @@ import { AppError } from '../middleware/errorHandler.js';
 
 export const getResidents = async (req, res, next) => {
   try {
-    const filter = { isActive: true };
+    const filter = {};
     if (req.user.role === ROLES.HOME_MANAGER) {
       filter.home = req.user.home;
-    } else if (req.query.home) {
-      filter.home = req.query.home;
+    } else {
+      filter.isActive = true;
+      if (req.query.home) {
+        filter.home = req.query.home;
+      }
     }
 
     const residents = await Resident.find(filter)
@@ -104,8 +107,26 @@ export const updateResident = async (req, res, next) => {
       residentData.photo = `/api/uploads/${req.file.filename}`;
     }
 
+    const oldIsActive = resident.isActive;
+
     Object.assign(resident, residentData);
+
+    if (resident.status === 'expired' || resident.status === 'discharged') {
+      resident.isActive = false;
+      if (resident.status === 'discharged') {
+        resident.dischargedDate = resident.dischargedDate || new Date();
+      }
+    } else {
+      resident.isActive = true;
+    }
+
     await resident.save();
+
+    if (oldIsActive && !resident.isActive) {
+      await Home.findByIdAndUpdate(resident.home, { $inc: { residentCount: -1 } });
+    } else if (!oldIsActive && resident.isActive) {
+      await Home.findByIdAndUpdate(resident.home, { $inc: { residentCount: 1 } });
+    }
 
     res.json({ success: true, data: resident });
   } catch (error) {

@@ -85,6 +85,7 @@ const residentSchema = new mongoose.Schema(
       sleep: String,
       medicineTaken: Boolean,
     }],
+    status: { type: String, enum: ['active', 'discharged', 'expired'], default: 'active' },
     isActive: { type: Boolean, default: true },
     admittedDate: { type: Date, default: Date.now },
     dischargedDate: Date,
