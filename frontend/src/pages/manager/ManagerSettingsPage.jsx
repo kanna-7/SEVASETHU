@@ -18,7 +18,8 @@ export default function ManagerSettingsPage() {
     phone: '',
     email: '',
     address: { street: '', city: '', state: '', pincode: '' },
-    contactPerson: { name: '', phone: '', email: '', designation: '' },
+    googleMapsUrl: '',
+    contactPerson: { name: '', phone: '', email: '', designation: '', photo: '' },
     documents: { pan: '' },
   });
 
@@ -40,6 +41,7 @@ export default function ManagerSettingsPage() {
               description: home.description || '',
               phone: home.phone || '',
               email: home.email || '',
+              googleMapsUrl: home.googleMapsUrl || '',
               address: {
                 street: home.address?.street || '',
                 city: home.address?.city || '',
@@ -51,6 +53,7 @@ export default function ManagerSettingsPage() {
                 phone: home.contactPerson?.phone || '',
                 email: home.contactPerson?.email || '',
                 designation: home.contactPerson?.designation || '',
+                photo: home.contactPerson?.photo || '',
               },
               documents: {
                 pan: home.documents?.pan || '',
@@ -98,6 +101,35 @@ export default function ManagerSettingsPage() {
       const res = await updateMyHome(data);
       const updatedHome = res.data.data;
       setSuccessMsg('Settings updated successfully!');
+      
+      // Update form state with the newly returned home details
+      if (updatedHome) {
+        setForm({
+          name: updatedHome.name || '',
+          type: updatedHome.type || 'orphanage',
+          description: updatedHome.description || '',
+          phone: updatedHome.phone || '',
+          email: updatedHome.email || '',
+          googleMapsUrl: updatedHome.googleMapsUrl || '',
+          address: {
+            street: updatedHome.address?.street || '',
+            city: updatedHome.address?.city || '',
+            state: updatedHome.address?.state || '',
+            pincode: updatedHome.address?.pincode || '',
+          },
+          contactPerson: {
+            name: updatedHome.contactPerson?.name || '',
+            phone: updatedHome.contactPerson?.phone || '',
+            email: updatedHome.contactPerson?.email || '',
+            designation: updatedHome.contactPerson?.designation || '',
+            photo: updatedHome.contactPerson?.photo || '',
+          },
+          documents: {
+            pan: updatedHome.documents?.pan || '',
+          },
+        });
+      }
+      
       if (updatedHome.contactPerson?.photo) {
         setGuardianPhotoPreview(updatedHome.contactPerson.photo);
       }
@@ -317,6 +349,16 @@ export default function ManagerSettingsPage() {
                     className="field"
                     value={form.address.pincode}
                     onChange={(e) => update('address', { ...form.address, pincode: e.target.value })}
+                  />
+                </div>
+                <div className="sm:col-span-2 mt-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Google Maps Location Link</label>
+                  <input
+                    type="url"
+                    placeholder="https://maps.app.goo.gl/..."
+                    className="field"
+                    value={form.googleMapsUrl || ''}
+                    onChange={(e) => update('googleMapsUrl', e.target.value)}
                   />
                 </div>
               </div>

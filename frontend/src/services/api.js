@@ -74,6 +74,13 @@ export const createResident = (data) => {
 
 // Inventory
 export const getInventory = (params) => api.get('/inventory', { params });
+export const getNeeds = () => api.get('/homes/needs');
+export const addNeed = (data) => api.post('/homes/needs', data);
+
+// Needs Admin
+export const getPendingNeeds = () => api.get('/admin/needs/pending');
+export const approveNeed = (homeId, needId) => api.put(`/admin/needs/${homeId}/${needId}/approve`);
+export const rejectNeed = (homeId, needId) => api.put(`/admin/needs/${homeId}/${needId}/reject`);
 
 // Medical Camps
 export const getMedicalCamps = (params) => api.get('/medical-camps', { params });

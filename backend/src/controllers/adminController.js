@@ -190,3 +190,65 @@ export const getAllUsers = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getPendingNeeds = async (req, res, next) => {
+  try {
+    const homes = await Home.find({ 'currentNeeds.status': 'pending' }).select('name currentNeeds');
+    const pendingNeeds = [];
+    homes.forEach((home) => {
+      home.currentNeeds.forEach((need) => {
+        if (need.status === 'pending') {
+          pendingNeeds.push({
+            homeId: home._id,
+            homeName: home.name,
+            needId: need._id,
+            item: need.item,
+            quantity: need.quantity,
+            priority: need.priority,
+            createdAt: need.createdAt,
+          });
+        }
+      });
+    });
+    pendingNeeds.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json({ success: true, data: pendingNeeds });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const approveNeed = async (req, res, next) => {
+  try {
+    const { homeId, needId } = req.params;
+    const home = await Home.findById(homeId);
+    if (!home) throw new AppError('Home not found', 404);
+
+    const need = home.currentNeeds.id(needId);
+    if (!need) throw new AppError('Need request not found', 404);
+
+    need.status = 'approved';
+    await home.save();
+
+    res.json({ success: true, message: 'Need request approved successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const rejectNeed = async (req, res, next) => {
+  try {
+    const { homeId, needId } = req.params;
+    const home = await Home.findById(homeId);
+    if (!home) throw new AppError('Home not found', 404);
+
+    const need = home.currentNeeds.id(needId);
+    if (!need) throw new AppError('Need request not found', 404);
+
+    home.currentNeeds.pull(needId);
+    await home.save();
+
+    res.json({ success: true, message: 'Need request rejected/removed successfully' });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -3,23 +3,25 @@ import { Navigate, Link } from 'react-router-dom';
 import { CheckCircle, XCircle, Building2, MapPin, Phone, Mail, Users, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { getPendingHomes, approveHome, getApprovedHomes } from '../../services/api';
+import { getPendingHomes, approveHome, getApprovedHomes, getPendingNeeds, approveNeed, rejectNeed } from '../../services/api';
 
 export default function AdminHomesPage() {
   const { isAdmin, loading: authLoading } = useAuth();
   const [homes, setHomes] = useState([]); // Pending requests
   const [acceptedHomes, setAcceptedHomes] = useState([]); // Approved homes
+  const [pendingNeeds, setPendingNeeds] = useState([]); // Pending needs requests
   const [loading, setLoading] = useState(true);
   const [approval, setApproval] = useState(null);
-  const [activeTab, setActiveTab] = useState('pending'); // 'pending' or 'accepted'
+  const [activeTab, setActiveTab] = useState('pending'); // 'pending', 'accepted', 'needs'
 
   useEffect(() => {
     if (isAdmin) {
       setLoading(true);
-      Promise.all([getPendingHomes(), getApprovedHomes()])
-        .then(([pendingRes, acceptedRes]) => {
+      Promise.all([getPendingHomes(), getApprovedHomes(), getPendingNeeds()])
+        .then(([pendingRes, acceptedRes, needsRes]) => {
           setHomes(pendingRes.data.data);
           setAcceptedHomes(acceptedRes.data.data);
+          setPendingNeeds(needsRes.data.data);
         })
         .catch(console.error)
         .finally(() => setLoading(false));
@@ -43,8 +45,27 @@ export default function AdminHomesPage() {
           setAcceptedHomes((current) => [{ ...approvedHome, status: 'approved', isVerified: true }, ...current]);
         }
       }
-    } catch (err) {
-      alert(err.response?.data?.message || 'Action failed');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to approve home');
+    }
+  };
+
+  const handleApproveNeed = async (homeId, needId) => {
+    try {
+      await approveNeed(homeId, needId);
+      setPendingNeeds((current) => current.filter((n) => n.needId !== needId));
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to approve need request');
+    }
+  };
+
+  const handleRejectNeed = async (homeId, needId) => {
+    if (!confirm('Are you sure you want to reject this need request?')) return;
+    try {
+      await rejectNeed(homeId, needId);
+      setPendingNeeds((current) => current.filter((n) => n.needId !== needId));
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to reject need request');
     }
   };
 
@@ -104,6 +125,21 @@ export default function AdminHomesPage() {
           {acceptedHomes.length > 0 && (
             <span className="ml-2 bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full font-medium">
               {acceptedHomes.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('needs')}
+          className={`pb-3 text-sm font-semibold border-b-2 px-4 transition-colors relative ${
+            activeTab === 'needs'
+              ? 'border-primary-600 text-primary-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Need Requests
+          {pendingNeeds.length > 0 && (
+            <span className="ml-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full font-medium">
+              {pendingNeeds.length}
             </span>
           )}
         </button>
@@ -183,77 +219,128 @@ export default function AdminHomesPage() {
             <p className="text-sm mt-1">All application requests have been processed.</p>
           </div>
         )
-      ) : acceptedHomes.length > 0 ? (
-        <div className="space-y-4">
-          {acceptedHomes.map((home) => {
-            const homeImage = home.images?.gallery?.[0] || home.images?.building?.[0];
-            return (
-              <div key={home._id} className="card hover:shadow-sm transition-shadow">
-                <div className="flex flex-col md:flex-row gap-6">
-                  {/* Image Column */}
-                  <div className="w-full md:w-48 h-32 rounded-lg overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center border border-gray-100">
-                    {homeImage ? (
-                      <img src={homeImage} alt={home.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="flex flex-col items-center text-gray-400">
-                        <Building2 className="w-8 h-8 mb-1" />
-                        <span className="text-xs">No image</span>
-                      </div>
-                    )}
-                  </div>
+      ) : activeTab === 'accepted' ? (
+        acceptedHomes.length > 0 ? (
+          <div className="space-y-4">
+            {acceptedHomes.map((home) => {
+              const homeImage = home.images?.gallery?.[0] || home.images?.building?.[0];
+              return (
+                <div key={home._id} className="card hover:shadow-sm transition-shadow">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {/* Image Column */}
+                    <Link to={`/homes/${home.slug}`} className="w-full md:w-48 h-32 rounded-lg overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center border border-gray-100 hover:opacity-90 transition-opacity">
+                      {homeImage ? (
+                        <img src={homeImage} alt={home.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex flex-col items-center text-gray-400">
+                          <Building2 className="w-8 h-8 mb-1" />
+                          <span className="text-xs">No image</span>
+                        </div>
+                      )}
+                    </Link>
 
-                  {/* Details Column */}
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-lg text-gray-900">
-                          <Link to={`/homes/${home.slug}`} className="hover:text-primary-600 transition-colors">
-                            {home.name}
-                          </Link>
-                        </h3>
-                        <span className="badge bg-green-100 text-green-800 capitalize text-xs">
-                          {home.type?.replace('_', ' ')}
-                        </span>
-                        <span className="badge badge-verified text-xs flex items-center gap-0.5">
-                          <CheckCircle className="w-3 h-3 text-primary-600" /> Active
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-500 flex items-center gap-1 mb-2">
-                        <MapPin className="w-3.5 h-3.5" /> {home.address?.city}, {home.address?.state}
-                      </p>
-                      
-                      <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600 mt-2">
-                        <p className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-gray-400" /> {home.phone}</p>
-                        <p className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-gray-400" /> {home.email}</p>
-                        {home.residentCount !== undefined && (
-                          <p className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-gray-400" /> {home.residentCount} Residents</p>
-                        )}
-                        {home.contactPerson?.name && (
-                          <p className="flex items-center gap-1.5 sm:col-span-2">
-                            Manager: <strong>{home.contactPerson.name}</strong>
-                          </p>
-                        )}
-                      </div>
+                    {/* Details Column */}
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-lg text-gray-900">
+                            <Link to={`/homes/${home.slug}`} className="hover:text-primary-600 transition-colors">
+                              {home.name}
+                            </Link>
+                          </h3>
+                          <span className="badge bg-green-100 text-green-800 capitalize text-xs">
+                            {home.type?.replace('_', ' ')}
+                          </span>
+                          <span className="badge badge-verified text-xs flex items-center gap-0.5">
+                            <CheckCircle className="w-3 h-3 text-primary-600" /> Active
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500 flex items-center gap-1 mb-2">
+                          <MapPin className="w-3.5 h-3.5" /> {home.address?.city}, {home.address?.state}
+                        </p>
+                        
+                        <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600 mt-2">
+                          <p className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-gray-400" /> {home.phone}</p>
+                          <p className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-gray-400" /> {home.email}</p>
+                          {home.residentCount !== undefined && (
+                            <p className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-gray-400" /> {home.residentCount} Residents</p>
+                          )}
+                          {home.contactPerson?.name && (
+                            <p className="flex items-center gap-1.5 sm:col-span-2">
+                              Manager: <strong>{home.contactPerson.name}</strong>
+                            </p>
+                          )}
+                        </div>
 
-                      {/* Guardian Login Details */}
-                      <div className="mt-3 p-3 bg-gray-50 border border-gray-100 rounded-lg text-xs max-w-md">
-                        <p className="font-semibold text-gray-700 mb-1">Guardian Login Details:</p>
-                        <p className="text-gray-600">Email: <strong className="text-gray-900">{home.manager?.email || home.email}</strong></p>
-                        <p className="text-gray-600 mt-0.5">Password: <strong className="text-gray-900">{home.temporaryPassword || 'ChangeMe@123'}</strong></p>
+                        {/* Guardian Login Details */}
+                        <div className="mt-3 p-3 bg-gray-50 border border-gray-100 rounded-lg text-xs max-w-md">
+                          <p className="font-semibold text-gray-700 mb-1">Guardian Login Details:</p>
+                          <p className="text-gray-600">Email: <strong className="text-gray-900">{home.manager?.email || home.email}</strong></p>
+                          <p className="text-gray-600 mt-0.5">Password: <strong className="text-gray-900">{home.temporaryPassword || 'ChangeMe@123'}</strong></p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="card text-center py-12 text-gray-500">
+            <Building2 className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+            <p className="font-medium text-gray-600">No approved homes</p>
+            <p className="text-sm mt-1">Once you approve registration requests, they will appear here.</p>
+          </div>
+        )
       ) : (
-        <div className="card text-center py-12 text-gray-500">
-          <Building2 className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-          <p className="font-medium text-gray-600">No approved homes</p>
-          <p className="text-sm mt-1">Once you approve registration requests, they will appear here.</p>
-        </div>
+        pendingNeeds.length > 0 ? (
+          <div className="grid gap-4">
+            {pendingNeeds.map((need) => (
+              <div key={need.needId} className="card hover:shadow-sm transition-shadow">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-gray-900">{need.item}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        need.priority === 'high' ? 'bg-red-100 text-red-800' :
+                        need.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {need.priority} Priority
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      Requested Quantity: <span className="font-semibold text-gray-800">{need.quantity}</span>
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Home: <strong className="text-gray-600">{need.homeName}</strong> · Requested on {new Date(need.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => handleApproveNeed(need.homeId, need.needId)}
+                      className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleRejectNeed(need.homeId, need.needId)}
+                      className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="card text-center py-12 text-gray-500">
+            <CheckCircle className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+            <p className="font-medium text-gray-600">All need requests resolved</p>
+            <p className="text-sm mt-1">No need requests are currently pending approval.</p>
+          </div>
+        )
       )}
     </DashboardLayout>
   );

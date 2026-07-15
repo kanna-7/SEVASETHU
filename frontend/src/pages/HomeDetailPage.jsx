@@ -102,12 +102,16 @@ export default function HomeDetailPage() {
 
           {activeTab === 'Needs' && (
             <div className="space-y-3">
-              {home.currentNeeds?.length > 0 ? home.currentNeeds.map((need, i) => (
-                <div key={i} className="card flex justify-between items-center">
-                  <span className="font-medium">{need.item}</span>
-                  <span className="text-sm text-gray-500">Qty: {need.quantity} · {need.priority} priority</span>
-                </div>
-              )) : <p className="text-gray-500">No current needs listed.</p>}
+              {home.currentNeeds?.filter((need) => need.status === 'approved' || !need.status).length > 0 ? (
+                home.currentNeeds.filter((need) => need.status === 'approved' || !need.status).map((need, i) => (
+                  <div key={i} className="card flex justify-between items-center">
+                    <span className="font-medium">{need.item}</span>
+                    <span className="text-sm text-gray-500">Qty: {need.quantity} · {need.priority} priority</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">No current needs listed.</p>
+              )}
             </div>
           )}
 
@@ -208,9 +212,21 @@ export default function HomeDetailPage() {
 
           <div className="card">
             <h3 className="font-semibold mb-3">Location</h3>
-            <div className="bg-gray-100 rounded-lg h-40 flex items-center justify-center text-gray-400 text-sm">
-              Google Maps integration
-            </div>
+            {home.googleMapsUrl ? (
+              <a
+                href={home.googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex flex-col items-center justify-center hover:bg-blue-100 transition-colors text-blue-700 text-sm font-medium gap-2"
+              >
+                <MapPin className="w-8 h-8 text-blue-500" />
+                <span>Open in Google Maps</span>
+              </a>
+            ) : (
+              <div className="bg-gray-100 rounded-lg h-40 flex items-center justify-center text-gray-400 text-sm">
+                Google Maps integration
+              </div>
+            )}
           </div>
         </div>
       </div>

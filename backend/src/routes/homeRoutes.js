@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { registerHome, getManagerDashboard, updateHome, addNeed, addMonthlyExpense, addReview } from '../controllers/homeController.js';
+import { registerHome, getManagerDashboard, updateHome, addNeed, getMyNeeds, addMonthlyExpense, addReview } from '../controllers/homeController.js';
 import { protect, optionalAuth } from '../middleware/auth.js';
 import { authorize } from '../middleware/rbac.js';
 import { ROLES } from '../config/roles.js';
@@ -16,6 +16,7 @@ router.use(protect, authorize(ROLES.HOME_MANAGER));
 
 router.get('/dashboard', getManagerDashboard);
 router.put('/my-home', upload.fields([{ name: 'homeImages', maxCount: 10 }, { name: 'guardianPhoto', maxCount: 1 }]), updateHome);
+router.get('/needs', getMyNeeds);
 router.post('/needs', addNeed);
 router.post('/expenses', addMonthlyExpense);
 

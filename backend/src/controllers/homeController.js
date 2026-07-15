@@ -175,6 +175,16 @@ export const addNeed = async (req, res, next) => {
   }
 };
 
+export const getMyNeeds = async (req, res, next) => {
+  try {
+    const home = await Home.findById(req.user.home).select('currentNeeds');
+    if (!home) throw new AppError('Home not found', 404);
+    res.json({ success: true, data: home.currentNeeds });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const addMonthlyExpense = async (req, res, next) => {
   try {
     const home = await Home.findById(req.user.home);
