@@ -13,7 +13,18 @@ const eventSchema = new mongoose.Schema(
     date: { type: Date, required: true },
     endDate: Date,
     location: String,
+    // Event status tracking
+    status: {
+      type: String,
+      enum: ['pending', 'ongoing', 'completed', 'cancelled'],
+      default: 'pending',
+    },
+    // Images uploaded after event completion
     images: [String],
+    completionImages: [String],
+    completionNotes: String,
+    completedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    completedAt: Date,
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     isPublic: { type: Boolean, default: true },
     attendees: Number,
@@ -21,6 +32,8 @@ const eventSchema = new mongoose.Schema(
       type: { type: String, enum: ['medical_camp', 'donation', 'resident'] },
       id: mongoose.Schema.Types.ObjectId,
     },
+    // Reference to linked medical camp
+    medicalCamp: { type: mongoose.Schema.Types.ObjectId, ref: 'MedicalCamp' },
   },
   { timestamps: true }
 );

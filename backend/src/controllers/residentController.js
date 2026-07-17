@@ -104,7 +104,11 @@ export const updateResident = async (req, res, next) => {
     }
 
     if (req.file) {
+      // Only update photo when a new file is explicitly uploaded
       residentData.photo = `/api/uploads/${req.file.filename}`;
+    } else {
+      // Preserve existing photo — remove from update data to prevent overwrite
+      delete residentData.photo;
     }
 
     const oldIsActive = resident.isActive;

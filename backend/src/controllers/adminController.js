@@ -184,8 +184,25 @@ export const approveMedicalCamp = async (req, res, next) => {
 
 export const getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.find().select('-password').populate('home', 'name');
+    const filter = {};
+    if (req.query.role) filter.role = req.query.role;
+    const users = await User.find(filter)
+      .select('-password')
+      .populate('home', 'name type')
+      .sort({ createdAt: -1 });
     res.json({ success: true, data: users });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllVolunteers = async (req, res, next) => {
+  try {
+    const volunteers = await Volunteer.find()
+      .populate('preferredHome', 'name type')
+      .populate('user', 'name email phone')
+      .sort({ createdAt: -1 });
+    res.json({ success: true, data: volunteers });
   } catch (error) {
     next(error);
   }

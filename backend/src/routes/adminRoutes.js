@@ -7,6 +7,7 @@ import {
   verifyDonation,
   approveMedicalCamp,
   getAllUsers,
+  getAllVolunteers,
   getPendingNeeds,
   approveNeed,
   rejectNeed,
@@ -25,6 +26,7 @@ router.put('/homes/:id/approve', approveHome);
 router.put('/donations/:id/verify', verifyDonation);
 router.put('/medical-camps/:id/approve', approveMedicalCamp);
 router.get('/users', getAllUsers);
+router.get('/volunteers', getAllVolunteers);
 router.get('/needs/pending', getPendingNeeds);
 router.put('/needs/:homeId/:needId/approve', approveNeed);
 router.put('/needs/:homeId/:needId/reject', rejectNeed);
