@@ -8,7 +8,7 @@ import {
   getAllCampsAdmin,
 } from '../controllers/medicalCampController.js';
 import { protect } from '../middleware/auth.js';
-import { authorize } from '../middleware/rbac.js';
+import { isAdmin, isHomeManager, isMedicalPartner, authorize } from '../middleware/rbac.js';
 import { ROLES } from '../config/roles.js';
 import { makeMulter } from '../config/upload.js';
 
@@ -18,26 +18,40 @@ const upload = makeMulter();
 // Public — list camps
 router.get('/', getMedicalCamps);
 
-// Admin — full camp management
-router.get('/all', protect, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), getAllCampsAdmin);
-router.post(
-  '/',
-  protect,
-  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MEDICAL_PARTNER),
-  createMedicalCamp
-);
+// Admin — full camp management (isAdmin covers both ADMIN and SUPER_ADMIN)
+router.get('/all', protect, isAdmin, getAllCampsAdmin);
 
-// Manager — register residents and complete camps
-router.post('/:id/register', protect, authorize(ROLES.HOME_MANAGER), registerResidentForCamp);
+// Create camp — admin OR medical partner
+router.post('/', protect, (req, res, next) => {
+  // Allow admin, super_admin, or medical_partner
+  const allowed = [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MEDICAL_PARTNER];
+  if (!req.user) return res.status(401).json({ success: false, message: 'Not authorized' });
+  if (!allowed.includes(req.user.role)) {
+    return res.status(403).json({ success: false, message: `Access denied — role '${req.user.role}' not allowed to create camps` });
+  }
+  next();
+}, createMedicalCamp);
+
+// Manager — register residents
+router.post('/:id/register', protect, isHomeManager, registerResidentForCamp);
+
+// Manager OR admin — mark camp complete with image upload
 router.post(
   '/:id/complete',
   protect,
-  authorize(ROLES.HOME_MANAGER, ROLES.ADMIN, ROLES.SUPER_ADMIN),
+  (req, res, next) => {
+    const allowed = [ROLES.HOME_MANAGER, ROLES.ADMIN, ROLES.SUPER_ADMIN];
+    if (!req.user) return res.status(401).json({ success: false, message: 'Not authorized' });
+    if (!allowed.includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+    next();
+  },
   upload.fields([{ name: 'completionImages', maxCount: 10 }]),
   completeMedicalCamp
 );
 
 // Medical partner — upload reports
-router.post('/:id/report', protect, authorize(ROLES.MEDICAL_PARTNER), uploadCampReport);
+router.post('/:id/report', protect, isMedicalPartner, uploadCampReport);
 
 export default router;

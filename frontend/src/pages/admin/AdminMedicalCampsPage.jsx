@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { getAllCampsAdmin, createMedicalCamp, getApprovedHomes } from '../../services/api';
+import { getAllCampsAdmin, createMedicalCamp, getApprovedHomes, getMedicalCamps } from '../../services/api';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -47,7 +47,10 @@ export default function AdminMedicalCampsPage() {
 
   useEffect(() => {
     if (isAdmin) {
-      Promise.all([getAllCampsAdmin(), getApprovedHomes()])
+      Promise.all([
+        getAllCampsAdmin().catch(() => getMedicalCamps()),  // fallback if /all not deployed yet
+        getApprovedHomes(),
+      ])
         .then(([campsRes, homesRes]) => {
           setCamps(campsRes.data.data || []);
           setHomes(homesRes.data.data || []);
@@ -94,7 +97,7 @@ export default function AdminMedicalCampsPage() {
       });
       alert('✅ Medical camp created! Home managers have been notified.');
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to create camp');
+      alert(err.response?.data?.message || `Failed: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
