@@ -5,6 +5,7 @@ import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ROLES } from '../config/roles.js';
+import { getFileUrl } from '../config/upload.js';
 
 export const getMedicalCamps = async (req, res, next) => {
   try {
@@ -126,7 +127,7 @@ export const completeMedicalCamp = async (req, res, next) => {
 
     // Process uploaded images
     const uploadedImages = req.files?.completionImages?.map(
-      (f) => `/api/uploads/${f.filename}`
+      (f) => getFileUrl(f)
     ) || [];
 
     // Update camp

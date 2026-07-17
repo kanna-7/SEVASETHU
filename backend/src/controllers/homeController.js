@@ -7,6 +7,7 @@ import Notification from '../models/Notification.js';
 import jwt from 'jsonwebtoken';
 import { ROLES } from '../config/roles.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { getFileUrl } from '../config/upload.js';
 
 export const registerHome = async (req, res, next) => {
   try {
@@ -24,9 +25,9 @@ export const registerHome = async (req, res, next) => {
     };
     homeData.status = 'pending';
     homeData.isVerified = false;
-    const urls = req.files.homeImages.map((file) => `/api/uploads/${file.filename}`);
+    const urls = req.files.homeImages.map((file) => getFileUrl(file));
     homeData.images = { building: urls.slice(0, 3), gallery: urls };
-    homeData.contactPerson.photo = `/api/uploads/${req.files.guardianPhoto[0].filename}`;
+    homeData.contactPerson.photo = getFileUrl(req.files.guardianPhoto[0]);
 
     const home = await Home.create(homeData);
 
@@ -108,7 +109,7 @@ export const updateHome = async (req, res, next) => {
       home.contactPerson = {
         ...home.contactPerson?.toObject(),
         ...(homeData.contactPerson || {}),
-        photo: `/api/uploads/${req.files.guardianPhoto[0].filename}`,
+        photo: getFileUrl(req.files.guardianPhoto[0]),
       };
     } else if (homeData.contactPerson) {
       // Merge contact person fields but preserve existing photo
@@ -134,7 +135,7 @@ export const updateHome = async (req, res, next) => {
 
     // Only add new images — never clear existing ones
     if (req.files?.homeImages?.length) {
-      const urls = req.files.homeImages.map((file) => `/api/uploads/${file.filename}`);
+      const urls = req.files.homeImages.map((file) => getFileUrl(file));
       const existingImages = home.images?.toObject ? home.images.toObject() : (home.images || {});
       home.images = {
         ...existingImages,

@@ -3,6 +3,7 @@ import Home from '../models/Home.js';
 import Notification from '../models/Notification.js';
 import { ROLES } from '../config/roles.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { getFileUrl } from '../config/upload.js';
 
 export const getResidents = async (req, res, next) => {
   try {
@@ -59,7 +60,7 @@ export const createResident = async (req, res, next) => {
     }
 
     if (req.file) {
-      residentData.photo = `/api/uploads/${req.file.filename}`;
+      residentData.photo = getFileUrl(req.file);
     }
 
     const resident = await Resident.create({ ...residentData, home: homeId });
@@ -105,7 +106,7 @@ export const updateResident = async (req, res, next) => {
 
     if (req.file) {
       // Only update photo when a new file is explicitly uploaded
-      residentData.photo = `/api/uploads/${req.file.filename}`;
+      residentData.photo = getFileUrl(req.file);
     } else {
       // Preserve existing photo — remove from update data to prevent overwrite
       delete residentData.photo;
