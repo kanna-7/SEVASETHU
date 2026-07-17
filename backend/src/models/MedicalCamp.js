@@ -30,6 +30,11 @@ const medicalCampSchema = new mongoose.Schema(
     },
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     approvedAt: Date,
+    // Completion tracking
+    completionImages: [String],
+    completedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    completedAt: Date,
+    completionNotes: String,
     images: [String],
     doctors: [String],
     specializations: [String],

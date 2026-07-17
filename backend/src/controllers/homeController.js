@@ -103,11 +103,19 @@ export const updateHome = async (req, res, next) => {
       };
     }
     
-    // Handle file uploads
+    // Handle file uploads — only update when new files are actually provided
     if (req.files?.guardianPhoto?.length) {
       home.contactPerson = {
         ...home.contactPerson?.toObject(),
+        ...(homeData.contactPerson || {}),
         photo: `/api/uploads/${req.files.guardianPhoto[0].filename}`,
+      };
+    } else if (homeData.contactPerson) {
+      // Merge contact person fields but preserve existing photo
+      home.contactPerson = {
+        ...home.contactPerson?.toObject(),
+        ...homeData.contactPerson,
+        photo: homeData.contactPerson.photo || home.contactPerson?.photo,
       };
     }
 
@@ -124,12 +132,14 @@ export const updateHome = async (req, res, next) => {
       };
     }
 
+    // Only add new images — never clear existing ones
     if (req.files?.homeImages?.length) {
       const urls = req.files.homeImages.map((file) => `/api/uploads/${file.filename}`);
+      const existingImages = home.images?.toObject ? home.images.toObject() : (home.images || {});
       home.images = {
-        ...home.images?.toObject(),
+        ...existingImages,
         building: urls.slice(0, 3),
-        gallery: [...(home.images?.gallery || []), ...urls],
+        gallery: [...(existingImages.gallery || []), ...urls],
       };
     }
 

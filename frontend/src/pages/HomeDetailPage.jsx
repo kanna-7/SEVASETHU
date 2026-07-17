@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Users, BadgeCheck, QrCode, Heart, User } from 'lucide-react';
-import { getHome } from '../services/api';
+import { MapPin, Phone, Mail, Users, BadgeCheck, QrCode, Heart, User, Calendar, Stethoscope, CheckCircle, ImageIcon } from 'lucide-react';
+import { getHome, getPublicEvents } from '../services/api';
 
 const tabs = ['About', 'Residents', 'Gallery', 'Needs', 'Donations', 'Events', 'Reviews'];
 
@@ -10,6 +10,8 @@ export default function HomeDetailPage() {
   const [data, setData] = useState(null);
   const [activeTab, setActiveTab] = useState('About');
   const [loading, setLoading] = useState(true);
+  const [publicEvents, setPublicEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
 
   useEffect(() => {
     getHome(slug)
@@ -17,6 +19,17 @@ export default function HomeDetailPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [slug]);
+
+  // Load public completed events when Events tab is active
+  useEffect(() => {
+    if (activeTab === 'Events' && slug) {
+      setEventsLoading(true);
+      getPublicEvents(slug)
+        .then((res) => setPublicEvents(res.data.data || []))
+        .catch(console.error)
+        .finally(() => setEventsLoading(false));
+    }
+  }, [activeTab, slug]);
 
   if (loading) return <div className="max-w-7xl mx-auto px-4 py-20 text-center text-gray-500">Loading...</div>;
   if (!data) return <div className="max-w-7xl mx-auto px-4 py-20 text-center text-gray-500">Home not found</div>;
@@ -239,13 +252,96 @@ export default function HomeDetailPage() {
           )}
 
           {activeTab === 'Events' && (
-            <div className="space-y-3">
-              {events?.length > 0 ? events.map((e) => (
-                <div key={e._id} className="card">
-                  <h4 className="font-medium">{e.title}</h4>
-                  <p className="text-sm text-gray-500">{new Date(e.date).toLocaleDateString()} · {e.type?.replace('_', ' ')}</p>
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900">Completed Events</h3>
+                  <p className="text-sm text-gray-500 mt-0.5">Medical camps and activities carried out at this home</p>
                 </div>
-              )) : <p className="text-gray-500">No events listed.</p>}
+                <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-semibold">
+                  {publicEvents.length} event{publicEvents.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+
+              {eventsLoading ? (
+                <div className="space-y-4">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="card animate-pulse h-32" />
+                  ))}
+                </div>
+              ) : publicEvents.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
+                  <Calendar className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">No completed events yet.</p>
+                  <p className="text-gray-400 text-xs mt-1">Events will appear here after they are completed by the home manager.</p>
+                </div>
+              ) : (
+                publicEvents.map((ev) => (
+                  <div key={ev._id} className="card border border-gray-200 hover:shadow-md transition-shadow overflow-hidden p-0">
+                    {/* Event header */}
+                    <div className="flex items-start gap-4 p-5">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                        {ev.type === 'medical_camp'
+                          ? <Stethoscope className="w-5 h-5 text-blue-600" />
+                          : <Calendar className="w-5 h-5 text-blue-600" />}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-bold text-gray-900">{ev.title}</h4>
+                          <span className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+                            <CheckCircle className="w-3 h-3" /> Completed
+                          </span>
+                        </div>
+                        {ev.description && (
+                          <p className="text-sm text-gray-500 mt-1">{ev.description}</p>
+                        )}
+                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {new Date(ev.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                          {ev.location && <span>📍 {ev.location}</span>}
+                          {ev.completedAt && (
+                            <span>✅ Completed: {new Date(ev.completedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Completion Notes */}
+                    {ev.completionNotes && (
+                      <div className="mx-5 mb-4 bg-blue-50 rounded-xl p-3">
+                        <p className="text-xs font-semibold text-blue-700 mb-1">Event Notes</p>
+                        <p className="text-sm text-blue-800">{ev.completionNotes}</p>
+                      </div>
+                    )}
+
+                    {/* Photo Gallery */}
+                    {(() => {
+                      const photos = [...(ev.completionImages || []), ...(ev.images || [])].filter(Boolean);
+                      const unique = [...new Set(photos)];
+                      return unique.length > 0 ? (
+                        <div className="px-5 pb-5">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <ImageIcon className="w-3.5 h-3.5" /> {unique.length} Photo{unique.length !== 1 ? 's' : ''}
+                          </p>
+                          <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                            {unique.map((img, i) => (
+                              <img
+                                key={i}
+                                src={img}
+                                alt={`${ev.title} photo ${i + 1}`}
+                                className="w-full h-28 object-cover rounded-lg border border-gray-200 hover:scale-105 transition-transform cursor-pointer"
+                                onError={(e) => { e.target.style.display = 'none'; }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                ))
+              )}
             </div>
           )}
 

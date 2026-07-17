@@ -42,7 +42,6 @@ export const getDonations = (params) => api.get('/donations', { params });
 
 // Homes
 export const registerHome = (data) => {
-  // When sending FormData, do not override Content-Type.
   const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
   return api.post('/homes/register', data, isFormData ? {} : undefined);
 };
@@ -57,6 +56,10 @@ export const getAdminDashboard = () => api.get('/admin/dashboard');
 export const getPendingHomes = () => api.get('/admin/homes/pending');
 export const getApprovedHomes = () => api.get('/admin/homes/approved');
 export const approveHome = (id, data) => api.put(`/admin/homes/${id}/approve`, data);
+
+// Admin Users & Volunteers
+export const getAdminUsers = (params) => api.get('/admin/users', { params });
+export const getAdminVolunteers = () => api.get('/admin/volunteers');
 
 // Manager
 export const getManagerDashboard = () => api.get('/homes/dashboard');
@@ -75,6 +78,7 @@ export const updateResident = (id, data) => {
   const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
   return api.put(`/residents/${id}`, data, isFormData ? {} : undefined);
 };
+export const updateResidentScheme = (id, data) => api.put(`/residents/${id}/schemes`, data);
 
 // Inventory
 export const getInventory = (params) => api.get('/inventory', { params });
@@ -88,10 +92,19 @@ export const rejectNeed = (homeId, needId) => api.put(`/admin/needs/${homeId}/${
 
 // Medical Camps
 export const getMedicalCamps = (params) => api.get('/medical-camps', { params });
+export const getAllCampsAdmin = () => api.get('/medical-camps/all');
+export const createMedicalCamp = (data) => api.post('/medical-camps', data);
+export const completeMedicalCamp = (id, data) => {
+  const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+  return api.post(`/medical-camps/${id}/complete`, data, isFormData ? {} : undefined);
+};
 
 // Events & Notifications
 export const getEvents = (params) => api.get('/events', { params });
+export const getPublicEvents = (slug) => api.get(`/events/public/${slug}`);
 export const getNotifications = () => api.get('/notifications');
+export const markNotificationRead = (id) => api.put(`/notifications/${id}/read`);
+export const markAllNotificationsRead = () => api.put('/notifications/read-all');
 
 // Reports
 export const generateReport = (params) => api.get('/reports', { params });
