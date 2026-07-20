@@ -25,6 +25,7 @@ import ManagerSettingsPage from './pages/manager/ManagerSettingsPage';
 import ManagerInventoryPage from './pages/manager/ManagerInventoryPage';
 import ManagerEventsPage from './pages/manager/ManagerEventsPage';
 import ManagerReportsPage from './pages/manager/ManagerReportsPage';
+import ManagerStatusUpdatePage from './pages/manager/ManagerStatusUpdatePage';
 
 function PublicLayout({ children }) {
   return (
@@ -62,6 +63,7 @@ export default function App() {
       <Route path="/manager" element={<ManagerDashboard />} />
       <Route path="/manager/residents" element={<ManagerResidentsPage />} />
       <Route path="/manager/settings" element={<ManagerSettingsPage />} />
+      <Route path="/manager/status-update" element={<ManagerStatusUpdatePage />} />
       <Route path="/manager/inventory" element={<ManagerInventoryPage />} />
       <Route path="/manager/events" element={<ManagerEventsPage />} />
       <Route path="/manager/reports" element={<ManagerReportsPage />} />

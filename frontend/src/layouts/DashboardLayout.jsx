@@ -5,7 +5,7 @@ import { getNotifications } from '../services/api';
 import {
   LayoutDashboard, Home, Users, Package, Calendar,
   FileText, Bell, Settings, Heart, Stethoscope, LogOut,
-  UserCheck, Menu, X,
+  UserCheck, Menu, X, ShieldCheck
 } from 'lucide-react';
 
 const adminLinks = [
@@ -23,6 +23,7 @@ const managerLinks = [
   { to: '/manager/inventory', icon: Package, label: 'Inventory' },
   { to: '/manager/donations', icon: Heart, label: 'Donations' },
   { to: '/manager/events', icon: Calendar, label: 'Events' },
+  { to: '/manager/status-update', icon: ShieldCheck, label: 'Status Update' },
   { to: '/manager/reports', icon: FileText, label: 'Reports' },
   { to: '/manager/settings', icon: Settings, label: 'Settings' },
 ];

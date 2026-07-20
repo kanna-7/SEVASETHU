@@ -16,6 +16,7 @@ import inventoryRoutes from './routes/inventoryRoutes.js';
 import medicalCampRoutes from './routes/medicalCampRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import homeStatusRoutes from './routes/homeStatusRoutes.js';
 
 import { fileURLToPath } from 'url';
 
@@ -46,6 +47,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/medical-camps', medicalCampRoutes);
 app.use('/api', eventRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/home-status', homeStatusRoutes);
 
 app.use(errorHandler);
 

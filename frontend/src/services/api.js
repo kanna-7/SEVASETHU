@@ -108,3 +108,10 @@ export const markAllNotificationsRead = () => api.put('/notifications/read-all')
 
 // Reports
 export const generateReport = (params) => api.get('/reports', { params });
+
+// Home Status (About section)
+export const getMyHomeStatus = () => api.get('/home-status/my');
+export const upsertHomeStatus = (data) => api.put('/home-status/my', data);
+export const getPublicHomeStatus = (slug) => api.get(`/home-status/public/${slug}`);
+export const getAllHomeStatuses = () => api.get('/home-status');
+export const getHomeStatusAdmin = (homeId) => api.get(`/home-status/${homeId}`);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Users, BadgeCheck, QrCode, Heart, User, Calendar, Stethoscope, CheckCircle, ImageIcon } from 'lucide-react';
-import { getHome, getPublicEvents } from '../services/api';
+import { MapPin, Phone, Mail, Users, BadgeCheck, QrCode, Heart, User, Calendar, Stethoscope, CheckCircle, ImageIcon, UtensilsCrossed, Banknote, Droplets, AlertTriangle } from 'lucide-react';
+import { getHome, getPublicEvents, getPublicHomeStatus } from '../services/api';
 
 const tabs = ['About', 'Residents', 'Gallery', 'Needs', 'Donations', 'Events', 'Reviews'];
 
@@ -12,10 +12,17 @@ export default function HomeDetailPage() {
   const [loading, setLoading] = useState(true);
   const [publicEvents, setPublicEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(false);
+  const [homeStatus, setHomeStatus] = useState(null);
 
   useEffect(() => {
-    getHome(slug)
-      .then((res) => setData(res.data.data))
+    Promise.all([
+      getHome(slug),
+      getPublicHomeStatus(slug).catch(() => ({ data: { data: null } }))
+    ])
+      .then(([homeRes, statusRes]) => {
+        setData(homeRes.data.data);
+        setHomeStatus(statusRes.data.data);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [slug]);
@@ -110,15 +117,144 @@ export default function HomeDetailPage() {
           </div>
 
           {activeTab === 'About' && (
-            <div className="prose max-w-none">
-              <p className="text-gray-600 leading-relaxed">{home.description || 'No description available.'}</p>
-              {home.contactPerson && (
-                <div className="mt-6 card">
-                  <h3 className="font-semibold mb-2">Contact Person</h3>
-                  <p className="text-sm text-gray-600">{home.contactPerson.name} — {home.contactPerson.designation}</p>
-                  <p className="text-sm text-gray-600">{home.contactPerson.phone}</p>
+            <div className="space-y-8">
+              {/* Status Update Dashboard (if available) */}
+              {homeStatus && (
+                <div className="bg-[#1e1e1e] text-white rounded-3xl p-6 shadow-xl border border-[#333]">
+                  <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
+                    <div className="flex items-center gap-3">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase whitespace-nowrap ${
+                        homeStatus.overallStatus === 'good' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                        homeStatus.overallStatus === 'needs_attention' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                        homeStatus.overallStatus === 'at_risk' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
+                        'bg-red-500/20 text-red-400 border border-red-500/30'
+                      }`}>
+                        {homeStatus.overallStatus.replace('_', ' ')}
+                      </span>
+                      <h3 className="text-lg sm:text-xl font-bold">Manager Status Update</h3>
+                    </div>
+                    <span className="px-3 py-1 bg-[#2a2a2a] text-gray-300 text-xs rounded-full border border-[#444]">
+                      Submitted by Home Manager
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-400 mb-6">
+                    Last updated: {new Date(homeStatus.updatedAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+
+                  <div className="grid sm:grid-cols-2 gap-4 mb-6">
+                    {/* Ration */}
+                    <div className="bg-[#2a2a2a] rounded-2xl p-4 border border-[#333]">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                            <UtensilsCrossed className="w-4 h-4 text-green-400" />
+                          </div>
+                          <span className="font-semibold text-gray-200">Ration</span>
+                        </div>
+                        {homeStatus.rationStatus === 'adequate' ? <CheckCircle className="w-4 h-4 text-green-400" /> : <AlertTriangle className="w-4 h-4 text-orange-400" />}
+                      </div>
+                      <p className="text-xs text-gray-400 mb-1">Status</p>
+                      <p className="font-bold text-white text-sm capitalize">{homeStatus.rationStatus.replace(/_/g, ' ')}</p>
+                    </div>
+
+                    {/* Pension */}
+                    {data.home?.type === 'old_age_home' && (
+                      <div className="bg-[#2a2a2a] rounded-2xl p-4 border border-[#333]">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                              <Banknote className="w-4 h-4 text-blue-400" />
+                            </div>
+                            <span className="font-semibold text-gray-200">Pension</span>
+                          </div>
+                          {homeStatus.pensionStatus === 'all_receiving' || homeStatus.pensionStatus === 'no_eligible' ? <CheckCircle className="w-4 h-4 text-green-400" /> : <AlertTriangle className="w-4 h-4 text-orange-400" />}
+                        </div>
+                        <p className="text-xs text-gray-400 mb-1">Coverage</p>
+                        <p className="font-bold text-white text-sm">
+                          {homeStatus.pensionStatus === 'all_receiving' ? 'All eligible receiving' :
+                           homeStatus.pensionStatus === 'no_eligible' ? 'No eligible residents' :
+                           `${homeStatus.pensionNotReceivingCount.replace(/_/g, ' ')} residents pending`}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Medical */}
+                    <div className="bg-[#2a2a2a] rounded-2xl p-4 border border-[#333]">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center">
+                            <Stethoscope className="w-4 h-4 text-teal-400" />
+                          </div>
+                          <span className="font-semibold text-gray-200">Medical</span>
+                        </div>
+                        {homeStatus.medicalStatus === 'fully_available' ? <CheckCircle className="w-4 h-4 text-green-400" /> : <AlertTriangle className="w-4 h-4 text-orange-400" />}
+                      </div>
+                      <p className="text-xs text-gray-400 mb-1">Support</p>
+                      <p className="font-bold text-white text-sm capitalize">{homeStatus.medicalStatus.replace(/_/g, ' ')}</p>
+                    </div>
+
+                    {/* Staff */}
+                    <div className="bg-[#2a2a2a] rounded-2xl p-4 border border-[#333]">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                            <Users className="w-4 h-4 text-purple-400" />
+                          </div>
+                          <span className="font-semibold text-gray-200">Staff</span>
+                        </div>
+                        {homeStatus.staffSituation === 'sufficient' ? <CheckCircle className="w-4 h-4 text-green-400" /> : <AlertTriangle className="w-4 h-4 text-orange-400" />}
+                      </div>
+                      <p className="text-xs text-gray-400 mb-1">Situation</p>
+                      <p className="font-bold text-white text-sm capitalize">{homeStatus.staffSituation.replace(/_/g, ' ')}</p>
+                    </div>
+                  </div>
+
+                  {/* Active Issues */}
+                  {homeStatus.activeIssues && homeStatus.activeIssues.filter(i => i !== 'none').length > 0 && (
+                    <div className="mb-6 pt-4 border-t border-[#333]">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="flex items-center gap-2 font-semibold text-red-400">
+                          <AlertTriangle className="w-4 h-4" /> Active Issues
+                        </h4>
+                        <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded-full font-bold">
+                          {homeStatus.activeIssues.filter(i => i !== 'none').length} OPEN
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {homeStatus.activeIssues.filter(i => i !== 'none').map(issue => (
+                          <span key={issue} className="px-3 py-1 rounded-full text-xs border border-orange-500/50 text-orange-300 capitalize">
+                            {issue.replace(/_/g, ' ')}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Department Support Needed */}
+                  {homeStatus.departmentSupport && (
+                    <div className="pt-4 border-t border-[#333]">
+                      <h4 className="font-semibold text-gray-300 mb-2 flex items-center justify-between">
+                        Department Support Needed
+                      </h4>
+                      <div className="bg-[#2a2a2a] rounded-xl p-4 text-sm text-gray-300 border border-[#333]">
+                        {homeStatus.departmentSupport}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
+
+              <div className="prose max-w-none">
+                <h3 className="text-xl font-bold mb-4">About the Home</h3>
+                <p className="text-gray-600 leading-relaxed">{home.description || 'No description available.'}</p>
+                {home.contactPerson && (
+                  <div className="mt-6 card bg-gray-50/50">
+                    <h3 className="font-semibold mb-2">Contact Person</h3>
+                    <p className="text-sm text-gray-600">{home.contactPerson.name} — {home.contactPerson.designation}</p>
+                    <p className="text-sm text-gray-600">{home.contactPerson.phone}</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
